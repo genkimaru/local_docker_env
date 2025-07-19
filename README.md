@@ -16,13 +16,13 @@ This project uses Docker Compose to orchestrate three main containers, each with
 - **Software:** Hinemos Agent
 - **Purpose:** Provides a PostgreSQL database and exposes a Hinemos Agent that can be managed by the Hinemos Manager container.
 
-## 3. WildFly & Hulft Container
+## 3. WildFly, Hulft & Hinemos Agent Container
 
-- **Base OS:** (Compatible with WildFly 18 and Hulft 8)
+- **Base OS:** (Compatible with WildFly 18, Hulft 8, and Hinemos Agent)
 - **WildFly:** Version 18
 - **Java:** Version 8
-- **Software:** Hulft Version 8
-- **Purpose:** Application server environment with file transfer middleware.
+- **Software:** Hulft Version 8, Hinemos Agent
+- **Purpose:** Application server environment with file transfer middleware and a Hinemos Agent that can be managed by the Hinemos Manager container.
 
 ---
 
@@ -55,14 +55,14 @@ services:
       - '5432:5432'
     # Additional setup for Hinemos Agent in Dockerfile
 
-  wildfly-hulft:
+  wildfly-hulft-agent:
     image: jboss/wildfly:18.0.0.Final
-    container_name: wildfly-hulft
+    container_name: wildfly-hulft-agent
     build:
-      context: ./wildfly-hulft
+      context: ./wildfly-hulft-agent
     environment:
       - JAVA_VERSION=8
-    # Additional setup for Hulft in Dockerfile
+    # Additional setup for Hulft and Hinemos Agent in Dockerfile
 ```
 
 > **Note:** Each service may require a custom Dockerfile in its respective context directory to install and configure Hinemos Manager, Hinemos Agent, and Hulft as needed. The above is a high-level plan; see the `prd.md` for detailed requirements.
