@@ -66,3 +66,39 @@ services:
 ```
 
 > **Note:** Each service may require a custom Dockerfile in its respective context directory to install and configure Hinemos Manager, Hinemos Agent, and Hulft as needed. The above is a high-level plan; see the `prd.md` for detailed requirements.
+
+---
+
+## Getting Started
+
+Follow these steps to build and start the project using Docker Compose:
+
+1. **Clone the repository** (if you haven't already):
+
+   ```bash
+   git clone <your-repo-url>
+   cd oculus-monitor
+   ```
+
+2. **Build the Docker images and start the containers:**
+
+   ```bash
+   docker-compose up --build
+   ```
+
+   This command will build the images for all services and start the containers as defined in `docker-compose.yml`.
+
+3. **Access the services:**
+
+   - **Hinemos Manager UI:** http://localhost:8080 (or the port you configured)
+   - **PostgreSQL:** localhost:5432 (default credentials: user `hinemos`, password `hinemos`)
+   - **WildFly Management:** http://localhost:9990
+   - **WildFly HTTP:** http://localhost:8081
+
+4. **Stopping the services:**
+   ```bash
+   docker-compose down
+   ```
+   This will stop and remove the containers.
+
+> **Note:** The Dockerfiles contain placeholders for installing Hinemos Manager, Hinemos Agent, and Hulft. You will need to provide the appropriate installation scripts or manual steps to complete the setup.

@@ -1,0 +1,34 @@
+version: '3.8'
+services:
+  hinemos-manager:
+    build:
+      context: ./hinemos-manager
+    image: hinemos-manager:latest
+    container_name: hinemos-manager
+    ports:
+      - '8080:8080' # Example port for Hinemos Manager UI
+    environment:
+      - JAVA_VERSION=17
+
+  hinemos-agent-db:
+    build:
+      context: ./hinemos-agent-db
+    image: hinemos-agent-db:latest
+    container_name: hinemos-agent-db
+    environment:
+      - POSTGRES_USER=hinemos
+      - POSTGRES_PASSWORD=hinemos
+      - POSTGRES_DB=hinemos
+    ports:
+      - '5432:5432'
+
+  wildfly-hulft-agent:
+    build:
+      context: ./wildfly-hulft-agent
+    image: wildfly-hulft-agent:latest
+    container_name: wildfly-hulft-agent
+    environment:
+      - JAVA_VERSION=8
+    ports:
+      - '9990:9990' # WildFly management
+      - '8081:8080' # WildFly HTTP (example)
