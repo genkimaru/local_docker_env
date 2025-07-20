@@ -1,14 +1,16 @@
 version: '3.8'
 services:
-  hinemos-manager:
+  hinemos-manager-wildfly:
     build:
-      context: ./hinemos-manager
-    image: hinemos-manager:latest
-    container_name: hinemos-manager
+      context: ./hinemos-manager-wildfly
+    image: hinemos-manager-wildfly:latest
+    container_name: hinemos-manager-wildfly
     ports:
-      - '8080:8080' # Example port for Hinemos Manager UI
+      - '8080:8080' # Hinemos Manager UI or WildFly HTTP
+      - '9990:9990' # WildFly management
     environment:
       - JAVA_VERSION=17
+    # Additional setup for Hinemos Manager and WildFly in Dockerfile
 
   hinemos-agent-db:
     build:
@@ -21,14 +23,4 @@ services:
       - POSTGRES_DB=hinemos
     ports:
       - '5432:5432'
-
-  wildfly-hulft-agent:
-    build:
-      context: ./wildfly-hulft-agent
-    image: wildfly-hulft-agent:latest
-    container_name: wildfly-hulft-agent
-    environment:
-      - JAVA_VERSION=8
-    ports:
-      - '9990:9990' # WildFly management
-      - '8081:8080' # WildFly HTTP (example)
+    # Additional setup for Hinemos Agent and PostgreSQL in Dockerfile
