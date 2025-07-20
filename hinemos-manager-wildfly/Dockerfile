@@ -1,7 +1,7 @@
 FROM almalinux:8.6
 
-# Install dependencies
-RUN dnf install -y wget tar java-17-openjdk java-17-openjdk-devel && \
+# Install dependencies with GPG check disabled
+RUN dnf install -y --nogpgcheck wget tar java-17-openjdk java-17-openjdk-devel && \
     dnf clean all
 
 # Install Hinemos Manager and Web Client (v7.1.1)
