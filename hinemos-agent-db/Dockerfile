@@ -1,10 +1,13 @@
 FROM almalinux:8.6
 
-# Install dependencies with GPG check disabled
-RUN dnf install -y --nogpgcheck wget tar java-17-openjdk java-17-openjdk-devel && \
-    dnf install -y --nogpgcheck https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+# Import GPG keys and install dependencies
+RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux && \
+    dnf makecache && \
+    dnf install -y wget tar java-17-openjdk java-17-openjdk-devel && \
+    dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG && \
     dnf -qy module disable postgresql && \
-    dnf install -y --nogpgcheck postgresql16-server postgresql16 && \
+    dnf install -y postgresql16-server postgresql16 && \
     dnf clean all
 
 # Initialize PostgreSQL
