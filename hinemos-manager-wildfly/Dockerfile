@@ -18,10 +18,22 @@ ENV WILDFLY_VERSION=27.0.1.Final
 RUN wget -O /tmp/wildfly.tar.gz "https://github.com/wildfly/wildfly/releases/download/${WILDFLY_VERSION}/wildfly-${WILDFLY_VERSION}.tar.gz" && \
     mkdir -p /opt/wildfly && \
     tar -xzf /tmp/wildfly.tar.gz -C /opt/wildfly --strip-components=1 && \
-    rm -f /tmp/wildfly.tar.gz
+    rm -f /tmp/wildfly.tar.gz && \
+    chown -R hinemos:hinemos /opt/wildfly
+
+# Create startup script
+RUN echo '#!/bin/bash\n\
+# Start Hinemos Manager services\n\
+systemctl start hinemos-manager || true\n\
+systemctl start hinemos-web || true\n\
+\n\
+# Start WildFly\n\
+su - hinemos -c "/opt/wildfly/bin/standalone.sh -b 0.0.0.0 &\n\
+exec "$@"' > /usr/local/bin/start.sh && \
+    chmod +x /usr/local/bin/start.sh
 
 # Expose ports for Hinemos Manager and WildFly
 EXPOSE 8080 9990
 
-# Default command (can be customized)
-CMD ["/opt/wildfly/bin/standalone.sh", "-b", "0.0.0.0"]
+# Default command
+CMD ["/usr/local/bin/start.sh", "tail", "-f", "/dev/null"]

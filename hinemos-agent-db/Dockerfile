@@ -1,8 +1,5 @@
 FROM almalinux:8.6
 
-# Import AlmaLinux GPG key
-RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux
-
 # Install dependencies with GPG check disabled
 RUN dnf install -y --nogpgcheck wget tar java-17-openjdk java-17-openjdk-devel && \
     dnf install -y --nogpgcheck https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
@@ -21,8 +18,15 @@ RUN wget -O /tmp/hinemos-agent.rpm "https://github.com/hinemos/hinemos/releases/
     chown -R hinemos:hinemos /opt/hinemos && \
     rm -f /tmp/hinemos-agent.rpm
 
+# Create startup script
+RUN echo '#!/bin/bash\n\
+/usr/pgsql-16/bin/postgres -D /var/lib/pgsql/16/data &\n\
+sleep 5\n\
+exec "$@"' > /usr/local/bin/start.sh && \
+    chmod +x /usr/local/bin/start.sh
+
 # Expose PostgreSQL port
 EXPOSE 5432
 
-# Default command (can be customized)
-CMD ["/usr/pgsql-16/bin/postgres", "-D", "/var/lib/pgsql/16/data"]
+# Default command
+CMD ["/usr/local/bin/start.sh", "tail", "-f", "/dev/null"]

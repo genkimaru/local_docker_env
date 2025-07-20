@@ -10,7 +10,8 @@ services:
       - '9990:9990' # WildFly management
     environment:
       - JAVA_VERSION=17
-    # Additional setup for Hinemos Manager and WildFly in Dockerfile
+    depends_on:
+      - hinemos-agent-db
 
   hinemos-agent-db:
     build:
@@ -21,6 +22,11 @@ services:
       - POSTGRES_USER=hinemos
       - POSTGRES_PASSWORD=hinemos
       - POSTGRES_DB=hinemos
+      - PGDATA=/var/lib/pgsql/16/data
     ports:
       - '5432:5432'
-    # Additional setup for Hinemos Agent and PostgreSQL in Dockerfile
+    volumes:
+      - postgres_data:/var/lib/pgsql/16/data
+
+volumes:
+  postgres_data:
