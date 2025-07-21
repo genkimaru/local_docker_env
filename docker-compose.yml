@@ -1,8 +1,8 @@
-version: '3.8'
 services:
   hinemos-manager-wildfly:
     build:
       context: ./hinemos-manager-wildfly
+      # platform: linux/amd64
     image: hinemos-manager-wildfly:latest
     container_name: hinemos-manager-wildfly
     ports:
@@ -16,6 +16,7 @@ services:
   hinemos-agent-db:
     build:
       context: ./hinemos-agent-db
+      # platform: linux/amd64
     image: hinemos-agent-db:latest
     container_name: hinemos-agent-db
     environment:

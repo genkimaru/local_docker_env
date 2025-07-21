@@ -1,35 +1,41 @@
-FROM almalinux:8.6
+FROM rockylinux:8
 
-# Import GPG keys and install dependencies
-RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux && \
+RUN dnf clean all && \
     dnf makecache && \
+    dnf update  -y ca-certificates && \
     dnf install -y wget tar java-17-openjdk java-17-openjdk-devel && \
-    dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm && \
-    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-PGDG && \
+    dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-aarch64/pgdg-redhat-repo-latest.noarch.rpm && \
+    ls -la /etc/pki/rpm-gpg/ && \
+    chmod 755 /etc/pki/rpm-gpg/PGDG-RPM-GPG-KEY-AARCH64-RHEL && \
+    rpm --import /etc/pki/rpm-gpg/PGDG-RPM-GPG-KEY-AARCH64-RHEL && \
     dnf -qy module disable postgresql && \
     dnf install -y postgresql16-server postgresql16 && \
     dnf clean all
 
-# Initialize PostgreSQL
-RUN /usr/pgsql-16/bin/postgresql-16-setup initdb
+# Create PGDATA directory and set permissions
+RUN mkdir -p /var/lib/pgsql/16/data && \
+    chown -R postgres:postgres /var/lib/pgsql/16/data
+
+# Initialize PostgreSQL as postgres user
+USER postgres
+RUN /usr/pgsql-16/bin/initdb -D /var/lib/pgsql/16/data
+
+USER root
+
+# Create hinemos user and group for Hinemos installation
+RUN groupadd -r hinemos && useradd -r -g hinemos -d /opt/hinemos -s /sbin/nologin hinemos
+RUN mkdir -p /opt/hinemos
 
 # Install Hinemos Agent (v7.1.1)
-ENV HINEMOS_VERSION=7.1.1
-RUN groupadd -r hinemos && useradd -r -g hinemos -d /opt/hinemos -s /sbin/nologin hinemos
-RUN wget -O /tmp/hinemos-agent.rpm "https://github.com/hinemos/hinemos/releases/download/v${HINEMOS_VERSION}/hinemos-7.1-agent-${HINEMOS_VERSION}-1.el8.x86_64.rpm" && \
+
+RUN wget -O /tmp/hinemos-agent.rpm https://github.com/hinemos/hinemos/releases/download/v7.1.1/hinemos-7.1-agent-7.1.1-1.el.noarch.rpm && \
     rpm -ivh /tmp/hinemos-agent.rpm && \
     chown -R hinemos:hinemos /opt/hinemos && \
     rm -f /tmp/hinemos-agent.rpm
 
-# Create startup script
-RUN echo '#!/bin/bash\n\
-/usr/pgsql-16/bin/postgres -D /var/lib/pgsql/16/data &\n\
-sleep 5\n\
-exec "$@"' > /usr/local/bin/start.sh && \
-    chmod +x /usr/local/bin/start.sh
+# Expect startup script to be mounted from host at /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh || true
 
-# Expose PostgreSQL port
 EXPOSE 5432
 
-# Default command
 CMD ["/usr/local/bin/start.sh", "tail", "-f", "/dev/null"]
