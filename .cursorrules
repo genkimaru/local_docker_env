@@ -1,0 +1,94 @@
+# .cursorrules
+
+## Docker Container Security & Best Practices
+
+### User Management Rules
+- NEVER run containers as root user in production
+- Always create a dedicated non-root user for running applications
+- Use `--system` flag for service users (no home directory, no shell)
+- Use regular users with home directory only when shell access is needed
+- Follow the principle: "Install as root, run as non-root"
+
+### Docker User Creation Patterns
+```dockerfile
+# System user (preferred for services)
+RUN useradd --system --no-create-home --shell /bin/false <username>
+
+# Regular user (when shell access needed)
+RUN useradd --create-home --shell /bin/bash <username>
+
+# Group creation (if needed)
+RUN groupadd -r <groupname> && useradd -r -g <groupname> <username>
+```
+
+### File Ownership & Permissions
+- Set proper ownership for application directories: `chown -R user:group /path`
+- Ensure the runtime user owns all files they need to read/write
+- Use minimal permissions - don't give write access unless required
+- Create necessary directories and set ownership before switching users
+
+### Container Structure Template
+```dockerfile
+FROM <base-image>
+
+# 1. Install software as root
+RUN apt-get update && \
+    apt-get install -y <packages> && \
+    rm -rf /var/lib/apt/lists/*
+
+# 2. Create non-root user
+RUN useradd --system --no-create-home --shell /bin/false <appuser>
+
+# 3. Set up directories and permissions
+RUN mkdir -p /app /var/log/<app> && \
+    chown -R <appuser>:<appuser> /app /var/log/<app>
+
+# 4. Copy application files
+COPY --chown=<appuser>:<appuser> . /app/
+
+# 5. Switch to non-root user
+USER <appuser>
+
+# 6. Set working directory
+WORKDIR /app
+
+# 7. Define startup command
+CMD ["<command>"]
+```
+
+### Security Guidelines
+- Clean up package cache after installation: `rm -rf /var/lib/apt/lists/*`
+- Use multi-stage builds to minimize final image size
+- Don't include unnecessary tools in production images
+- Use COPY --chown instead of COPY + chown for better layer caching
+- Avoid running chmod/chown after switching to non-root user
+
+### When Root Access is Acceptable
+- Init containers that perform setup and exit
+- Development/debugging containers (with explicit documentation)
+- Containers that specifically need system-level access (document why)
+- Always justify and document any root usage
+
+### Volume & Mount Considerations
+- When using volumes, ensure proper ownership mapping
+- Use named volumes over bind mounts when possible
+- Set appropriate user/group IDs for volume access
+- Document any special volume permission requirements
+
+### Application Startup Best Practices
+- Use exec form of CMD/ENTRYPOINT: `CMD ["app", "arg"]` not `CMD app arg`
+- Handle signals properly for graceful shutdown
+- Use process managers (like tini) for PID 1 if needed
+- Validate user permissions during container startup
+
+### Dockerfile Optimization
+- Combine RUN commands to reduce layers
+- Order commands from least to most frequently changing
+- Use .dockerignore to exclude unnecessary files
+- Pin base image versions for reproducibility
+
+### Documentation Requirements
+- Comment why specific users/permissions are needed
+- Document any security trade-offs made
+- Include examples of proper container usage
+- Specify required environment variables and volumes
