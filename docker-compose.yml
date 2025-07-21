@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   hinemos-manager-wildfly:
     build:
@@ -12,6 +13,12 @@ services:
       - JAVA_VERSION=17
     depends_on:
       - hinemos-agent-db
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   hinemos-agent-db:
     build:
@@ -28,6 +35,13 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/pgsql/16/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    # For production, use Docker secrets for sensitive data like POSTGRES_PASSWORD
 
 volumes:
   postgres_data:
