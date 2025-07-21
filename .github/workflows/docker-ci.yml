@@ -1,0 +1,48 @@
+name: Docker Compose CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and start services
+        run: |
+          docker-compose up --build -d
+
+      - name: Wait for healthchecks
+        run: |
+          set -e
+          for service in hinemos-agent-db hinemos-manager-wildfly; do
+            echo "Waiting for $service to be healthy..."
+            for i in {1..30}; do
+              status=$(docker inspect --format='{{.State.Health.Status}}' $service)
+              if [ "$status" = "healthy" ]; then
+                echo "$service is healthy!"
+                break
+              fi
+              if [ $i -eq 30 ]; then
+                echo "$service did not become healthy in time." >&2
+                docker logs $service
+                exit 1
+              fi
+              sleep 5
+            done
+          done
+
+      - name: Show running containers
+        run: docker ps -a
+
+      - name: Tear down
+        if: always()
+        run: docker-compose down -v
