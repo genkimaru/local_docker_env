@@ -4,14 +4,13 @@ FROM rockylinux:8
 RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-8 && \
     dnf makecache && \
     dnf install -y wget tar java-17-openjdk java-17-openjdk-devel && \
-    dnf clean all
+    dnf clean all && \
+    rm -rf /var/cache/dnf/* /tmp/*
 
-# Create users for different services
+# Create users and directories for services
 RUN groupadd -r hinemos && useradd -r -g hinemos -d /opt/hinemos -s /sbin/nologin hinemos && \
-    groupadd -r wildfly && useradd -r -g wildfly -d /opt/wildfly -s /sbin/nologin wildfly
-
-# Ensure /opt/hinemos exists before chown
-RUN mkdir -p /opt/hinemos
+    groupadd -r wildfly && useradd -r -g wildfly -d /opt/wildfly -s /sbin/nologin wildfly && \
+    mkdir -p /opt/hinemos
 
 # Install Hinemos Manager and Web Client (v7.1.1)
 ENV HINEMOS_VERSION=7.1.1
@@ -29,7 +28,7 @@ RUN wget -O /tmp/wildfly.tar.gz "https://github.com/wildfly/wildfly/releases/dow
     rm -f /tmp/wildfly.tar.gz && \
     chown -R wildfly:wildfly /opt/wildfly
 
-# Create startup script
+# Create startup script with correct permissions
 RUN echo '#!/bin/bash\n\
 # Start Hinemos Manager services\n\
 systemctl start hinemos-manager || true\n\
@@ -39,7 +38,8 @@ systemctl start hinemos-web || true\n\
 su - wildfly -c "/opt/wildfly/bin/standalone.sh -b 0.0.0.0 &"\n\
 sleep 5\n\
 exec "$@"' > /usr/local/bin/start.sh && \
-    chmod +x /usr/local/bin/start.sh
+    chmod +x /usr/local/bin/start.sh && \
+    chown root:root /usr/local/bin/start.sh
 
 # Expose ports for Hinemos Manager and WildFly
 EXPOSE 8080 9990
