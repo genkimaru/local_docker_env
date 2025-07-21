@@ -1,9 +1,8 @@
 FROM rockylinux:8
 
 # Import GPG keys and install dependencies
-RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-Rocky-8 && \
-    dnf makecache && \
-    dnf install -y wget tar java-17-openjdk java-17-openjdk-devel && \
+RUN dnf makecache && \
+    dnf install -y wget tar java-17-openjdk java-17-openjdk-devel vim-common  unzip && \
     dnf clean all && \
     rm -rf /var/cache/dnf/* /tmp/*
 
@@ -28,18 +27,9 @@ RUN wget -O /tmp/wildfly.tar.gz "https://github.com/wildfly/wildfly/releases/dow
     rm -f /tmp/wildfly.tar.gz && \
     chown -R wildfly:wildfly /opt/wildfly
 
-# Create startup script with correct permissions
-RUN echo '#!/bin/bash\n\
-# Start Hinemos Manager services\n\
-systemctl start hinemos-manager || true\n\
-systemctl start hinemos-web || true\n\
-\n\
-# Start WildFly as wildfly user\n\
-su - wildfly -c "/opt/wildfly/bin/standalone.sh -b 0.0.0.0 &"\n\
-sleep 5\n\
-exec "$@"' > /usr/local/bin/start.sh && \
-    chmod +x /usr/local/bin/start.sh && \
-    chown root:root /usr/local/bin/start.sh
+# Copy startup script and ensure permissions
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh && chown root:root /usr/local/bin/start.sh
 
 # Expose ports for Hinemos Manager and WildFly
 EXPOSE 8080 9990
